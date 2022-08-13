@@ -1,12 +1,11 @@
 package pruebas;
 
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import io.github.bonigarcia.wdm.WebDriverManager;
 
 import java.util.Collections;
 
@@ -26,6 +25,52 @@ public class InvisibleChromeDriver {
         return options;
     }
 
+    public static String find_video_title(WebDriver driver) {
+        String lineContent = null;
+        try {
+            lineContent = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
+                    "--video > div.MaterialView-video > div.MaterialView-content > div > div.Header.material-video > " +
+                    "div.Header-class > div > h1")).getText();
+        } catch (Exception e) {
+            System.out.println("\n FAIL TO GET ELEMENT BY CSS-SELECTOR");
+        }
+        return lineContent;
+    }
+
+    public static int find_number_of_videos(WebDriver driver) {
+        int number_of_videos = 0;
+        try {
+            String [] chapters_info = get_numeric_video_info(driver);
+            number_of_videos = Integer.parseInt(chapters_info[1]);
+        } catch (Exception e) {
+            System.out.println("\n FAIL TO GET THE TOTAL NUMBER OF VIDEOS IN THIS COURSE");
+        }
+        return number_of_videos;
+    }
+    public static String[] get_numeric_video_info(WebDriver driver){
+        try{
+        String video_info_text =
+                driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-" +
+                        "type--video > div.MaterialView-video > div.MaterialView-content > div > div." +
+                        "Header.material-video > div.Header-class > div > span")).getText();
+        return video_info_text.split("/");
+        }catch(Exception e){
+            System.out.println("\n FAIL TO GET THE NUMERIC VIDEO INFO\n");
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public static int find_actual_video_number(WebDriver driver) {
+        int video_number = 0;
+        try {
+            String [] chapters_info = get_numeric_video_info(driver);
+            video_number = Integer.parseInt(chapters_info[0]);
+        } catch (Exception e) {
+            System.out.println("\n FAIL TO GET THE TOTAL NUMBER OF VIDEOS IN THIS COURSE");
+        }
+        return video_number;
+    }
+
     public static void main(String[] args) {
         WebDriverManager.chromedriver().setup();
         WebDriver driver;
@@ -35,15 +80,16 @@ public class InvisibleChromeDriver {
         driver.get(url_course);
 
         String title = driver.getTitle();
-        System.out.println("The page title is: " + title);
-        try {
-            WebElement linea = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type--video > div.MaterialView-video > div.MaterialView-content > div > div.Header.material-video > div.Header-class > div > h1"));
-            String lineContent = linea.getText();
-            System.out.println("lineaContent: " + lineContent);
-        } catch (Exception e) {
-            System.out.println("\n FAIL TO GET ELEMENT BY CSS-SELECTOR");
-        }
+        String soutformat = "%-40s --> %-30s \n";
 
-        driver.quit();
+        System.out.format(soutformat,"The page title is",title);
+
+        String video_title = find_video_title(driver);
+        System.out.format(soutformat,"The actual video title is", video_title);
+
+        int total_videos_number = find_number_of_videos(driver);
+        System.out.format(soutformat, "The total number of videos", total_videos_number);
+
+//        driver.quit();
     }
 }
