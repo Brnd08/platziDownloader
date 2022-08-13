@@ -59,6 +59,19 @@ public class InvisibleChromeDriver {
             throw new RuntimeException(e);
         }
     }
+
+    public static String get_current_course(WebDriver driver){
+        try{
+        String video_info_text =
+                driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
+                        "--video > div.MaterialView-video > div.MaterialView-content > div > div.Header" +
+                        ".material-video > div.Header-course > div.Header-course-info > div > a > h2")).getText();
+        return video_info_text;
+        }catch(Exception e){
+            System.out.println("\n FAIL TO GET THE CURRENT COURSE\n");
+            throw new RuntimeException(e);
+        }
+    }
     
     public static int find_current_video_number(WebDriver driver) {
         int video_number = 0;
@@ -83,13 +96,18 @@ public class InvisibleChromeDriver {
 
 
         String current_video_title = find_current_video_title(driver);
-        System.out.format(soutformat,"The current video title is", current_video_title);
+        System.out.format(soutformat,"The current video TITLE is", current_video_title);
+
+        String current_video_course = get_current_course(driver);
+        System.out.format(soutformat,"The current video COURSE is", current_video_course);
 
         int current_video_number = find_current_video_number(driver);
-        System.out.format(soutformat,"The current video number is", current_video_number);
+        System.out.format(soutformat,"The current video NUMBER is", current_video_number);
 
         int total_videos_number = find_number_of_videos(driver);
-        System.out.format(soutformat, "The total number of videos", total_videos_number);
+        System.out.format(soutformat, "The total NUMBER OF VIDEOS is", total_videos_number);
+
+
 
 //        driver.quit();
     }
