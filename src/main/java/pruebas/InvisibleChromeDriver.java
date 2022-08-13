@@ -25,7 +25,7 @@ public class InvisibleChromeDriver {
         return options;
     }
 
-    public static String find_video_title(WebDriver driver) {
+    public static String find_current_video_title(WebDriver driver) {
         String lineContent = null;
         try {
             lineContent = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
@@ -60,7 +60,7 @@ public class InvisibleChromeDriver {
         }
     }
     
-    public static int find_actual_video_number(WebDriver driver) {
+    public static int find_current_video_number(WebDriver driver) {
         int video_number = 0;
         try {
             String [] chapters_info = get_numeric_video_info(driver);
@@ -79,13 +79,14 @@ public class InvisibleChromeDriver {
         String url_course = "https://platzi.com/clases/2793-computacion-basica/46747-bienvenida-al-curso";
         driver.get(url_course);
 
-        String title = driver.getTitle();
         String soutformat = "%-40s --> %-30s \n";
 
-        System.out.format(soutformat,"The page title is",title);
 
-        String video_title = find_video_title(driver);
-        System.out.format(soutformat,"The actual video title is", video_title);
+        String current_video_title = find_current_video_title(driver);
+        System.out.format(soutformat,"The current video title is", current_video_title);
+
+        int current_video_number = find_current_video_number(driver);
+        System.out.format(soutformat,"The current video number is", current_video_number);
 
         int total_videos_number = find_number_of_videos(driver);
         System.out.format(soutformat, "The total number of videos", total_videos_number);
