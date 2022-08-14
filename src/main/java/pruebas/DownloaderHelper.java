@@ -10,7 +10,7 @@ import java.net.URLConnection;
 public class DownloaderHelper {
     public static void validate_file(String root, String name) {
         File root1 = new File(root);
-        File file = new File(root + File.pathSeparator + name);
+        File file = new File(root + File.separator + name);
         //VERIFY PRIVILEGES TO WRITE
         if (!root1.canWrite())
             throw new RuntimeException("THE PROGRAM DOESN'T HAVE PRIVILEGES TO WRITE IN THIS DIRECTORY");
@@ -33,9 +33,9 @@ public class DownloaderHelper {
     }
 
     public static void download_bytes(String root_file, String file_name, URL url) {
-
-        validate_file(root_file, file_name);
         File file_to_download = new File(root_file + File.separator + file_name);
+        System.out.println("DOWNLOADING FILE FROM THE URL " + url + " ruta-> " +file_to_download.getPath());
+        validate_file(root_file, file_name);
         try {//DOWNLOAD THE FILE
             URLConnection urlConnection = url.openConnection();
             InputStream in = urlConnection.getInputStream();
@@ -48,7 +48,7 @@ public class DownloaderHelper {
             }
             out.close();
             in.close();
-
+            System.out.println("FILE DOWNLOADED ->> " + file_to_download);
         } catch (Exception e) {
             System.out.println("FAIL TO DOWNLOAD THE FILE FROM THE URL " + url + " FILE: " + file_to_download);
             throw new RuntimeException(e);
