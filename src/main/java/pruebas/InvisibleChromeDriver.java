@@ -9,6 +9,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
+import javax.swing.*;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -37,7 +38,7 @@ public class InvisibleChromeDriver {
         throw new RuntimeException("COULDN'T GET THE STREAM URL");
     }
 
-    public static void download_stream(String input_url, String output_file_path, String video_name) {
+    public static void download_stream(String input_url, String output_file_path) {
         try {
             FFmpeg ffmpeg = new FFmpeg("src/main/java/pruebas/ffmpeg.exe");
             FFprobe ffprobe = new FFprobe("src/main/java/pruebas/ffprobe.exe");
@@ -144,7 +145,7 @@ public class InvisibleChromeDriver {
         return video_number;
     }
 
-    public static void download_current_video_files(WebDriver driver, String file_name) {
+    public static void download_current_video_files(WebDriver driver, String file_name, String parent_directory) {
         WebElement download_all_files_button;
         String link;
         try {
@@ -157,7 +158,7 @@ public class InvisibleChromeDriver {
         try {
             URL download_url = new URL(link);
             String extension = new StringBuilder(link).substring(link.lastIndexOf("."));
-            download_bytes("C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop", file_name + extension, download_url);
+            download_bytes(parent_directory, file_name + extension, download_url);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -199,12 +200,16 @@ public class InvisibleChromeDriver {
         final String course_name = get_current_course(driver);
         System.out.format(printFormat, "The current video COURSE is", course_name);
 
-        final String parent_directory = "";
-        final String course_directory = parent_directory + File.separator + course_name;
-        final String class_resources_directory = course_directory + File.separator + "archivos de las clases";
+        final File parent_directory = new File ("C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop\\Platzi-Downloader");
+        final File course_directory = new File (parent_directory + File.separator + course_name);
+        final File lesson_resources_directory = new File (course_directory + File.separator + "archivos de las clases");
 
-        final String first_video_url = "https://platzi.com/clases/3208-programacion-basica/51979-crea-tu-primer-sitio-web";
+        final String first_video_url = "https://platzi.com/clases/3208-programacion-basica/52069-que-es-platzi/";
         driver.get(first_video_url);
+
+
+        JOptionPane.showMessageDialog(null , "Cierra esta mensaje una vez hayás iniciado sesión en " +
+                "la plataforma", "Espera Un poco ...", 1);
 
         final int total_videos_number = find_number_of_videos(driver);
         System.out.format(printFormat, "The total NUMBER OF VIDEOS in this course: ", total_videos_number);
@@ -227,7 +232,7 @@ public class InvisibleChromeDriver {
             try {
                 current_files_download_name = current_video_number + numeration_separator + current_video_title
                         + " - " + driver.findElement(By.className("FilesAndLinks-title")).getText();
-                download_current_video_files(driver, current_files_download_name);
+                download_current_video_files(driver, current_files_download_name, lesson_resources_directory.toString());
             } catch (Exception e) {
                 System.out.println("ATTENTION: COULDN'T FIND FILES FOR THIS VIDEO \t");
             }
@@ -237,8 +242,12 @@ public class InvisibleChromeDriver {
 
             System.out.format(printFormat, "STARTING DOWNLOADING CURRENT VIDEO", current_video_title);
             current_video_download_name = current_video_number + numeration_separator + current_video_title + ".mp4";
-            download_stream(current_stream_url, "C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop\\" + current_video_download_name, current_video_title);
-            System.out.println("THE VIDEO FOR THIS COURSE WAS SUCCESFULLY DOWNLOADED");
+
+            if(course_directory.exists())
+                course_directory.mkdirs();
+
+            download_stream(current_stream_url, course_directory + File.separator + current_video_download_name);
+            System.out.println(current_video_download_name + " WAS SUCCESSFULLY DOWNLOADED \n");
 
             go_to_next_video_and_wait(driver);
 

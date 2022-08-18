@@ -27,7 +27,7 @@ public class DownloaderHelper {
 
         //HANDLE FILE CREATION/DETECTION
         if (!file.exists())
-            System.out.println("EVERYTHING IS OKAY TO WRITE THE FILE " + file);
+            System.out.println("SAVING THE FILE " + file);
         else
             System.out.println("THE FILE ALREADY EXISTS");
     }
