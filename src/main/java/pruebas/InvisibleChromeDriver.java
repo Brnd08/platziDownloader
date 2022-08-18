@@ -12,6 +12,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -19,6 +20,10 @@ import java.util.Map;
 import static pruebas.DownloaderHelper.download_bytes;
 
 public class InvisibleChromeDriver {
+
+    static {
+        WebDriverManager.chromedriver().setup();
+    }
 
     public static String get_current_stream_url(WebDriver driver) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -159,46 +164,89 @@ public class InvisibleChromeDriver {
 
     }
 
-    public static void main(String[] args) {
-        WebDriverManager.chromedriver().setup();
-        WebDriver driver;
-        driver = new ChromeDriver(create_invisible_chrome_options());
+    public static boolean page_has_loaded(WebDriver driver, String old_text_value) {
 
-        String url_course = "https://platzi.com/clases/3208-programacion-basica/51979-crea-tu-primer-sitio-web";
-        driver.get(url_course);
+        String current_text_value = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type--video > " +
+                "div.MaterialView-video > div.MaterialView-content > div > div.Header.material-video > div.Header-course > " +
+                "div.Header-course-actions > button.Header-course-actions-next > span")).getText();
 
-        String printFormat = "%-40s --> %-30s \n";
+        return !old_text_value.equals(current_text_value) && !old_text_value.isBlank() && !old_text_value.isEmpty();
+    }
 
-
-        String current_video_title = find_current_video_title(driver);
-        System.out.format(printFormat, "The current video TITLE is", current_video_title);
-
-        String current_video_course = get_current_course(driver);
-        System.out.format(printFormat, "The current video COURSE is", current_video_course);
-
-        int current_video_number = find_current_video_number(driver);
-        System.out.format(printFormat, "The current video NUMBER is", current_video_number);
-
-        int total_videos_number = find_number_of_videos(driver);
-        System.out.format(printFormat, "The total NUMBER OF VIDEOS is", total_videos_number);
-
-        System.out.println("STARTING DOWNLOADING VIDEO FILES...");
-
-        String file_to_download_name = current_video_title + " - " + driver.findElement(By.className("FilesAndLinks-title")).getText();
+    public static void go_to_next_video_and_wait(WebDriver driver) {
         try {
-            download_current_video_files(driver, file_to_download_name);
+            WebElement next_video_button = driver.findElement(By.className("#material-view > " +
+                    "div.MaterialView.MaterialView-type--video > div.MaterialView-video > div.MaterialView-content > div > " +
+                    "div.Header.material-video > div.Header-course > div.Header-course-actions > " +
+                    "button.Header-course-actions-next"));
+            String old_text_value = next_video_button.findElement(By.tagName("span")).getText();
+            next_video_button.click();
+            while (!page_has_loaded(driver, old_text_value))
+                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
         } catch (Exception e) {
-            System.out.println("COULDN'T FIND FILES FOR THIS VIDEO \t" + e.getMessage());
+            System.out.println("\n FAIL TO WAIT UNTIL LOAD PAGE\n");
+            throw new RuntimeException(e);
         }
+    }
 
-        String streaming_url = get_current_stream_url(driver);
-        System.out.format(printFormat, "Streaming link", streaming_url);
+    public static void main(String[] args) {
 
-        System.out.format(printFormat, "STARTING DOWNLOADING CURRENT VIDEO", current_video_title);
+        WebDriver driver = new ChromeDriver(create_invisible_chrome_options());
 
-        String video_name = current_video_number + ".- " + current_video_title + ".mp4";
-        download_stream(streaming_url, "C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop\\" + video_name, current_video_title);
-        System.out.println("THE VIDEO FOR THIS COURSE WAS SUCCESFULLY DOWNLOADED");
+        final String printFormat = "%-40s --> %-30s \n";
+        final String numeration_separator = ".- ";
+
+        final String course_name = get_current_course(driver);
+        System.out.format(printFormat, "The current video COURSE is", course_name);
+
+        final String parent_directory = "";
+        final String course_directory = parent_directory + File.separator + course_name;
+        final String class_resources_directory = course_directory + File.separator + "archivos de las clases";
+
+        final String first_video_url = "https://platzi.com/clases/3208-programacion-basica/51979-crea-tu-primer-sitio-web";
+        driver.get(first_video_url);
+
+        final int total_videos_number = find_number_of_videos(driver);
+        System.out.format(printFormat, "The total NUMBER OF VIDEOS in this course: ", total_videos_number);
+
+        String current_video_title = "Default title";
+        int current_video_number = 1;
+        String current_files_download_name = "Default files download name";
+        String current_stream_url = "Default stream url";
+        String current_video_download_name = "Default video download name";
+
+        do {
+
+            current_video_title = find_current_video_title(driver);
+            System.out.format(printFormat, "The current video TITLE is", current_video_title);
+
+            current_video_number = find_current_video_number(driver);
+            System.out.format(printFormat, "The current video NUMBER is", current_video_number);
+
+            System.out.println("SEARCHING FOR FILES IN THIS VIDEO ...");
+            try {
+                current_files_download_name = current_video_number + numeration_separator + current_video_title
+                        + " - " + driver.findElement(By.className("FilesAndLinks-title")).getText();
+                download_current_video_files(driver, current_files_download_name);
+            } catch (Exception e) {
+                System.out.println("ATTENTION: COULDN'T FIND FILES FOR THIS VIDEO \t");
+            }
+
+            current_stream_url = get_current_stream_url(driver);
+            System.out.format(printFormat, "Streaming link", current_stream_url);
+
+            System.out.format(printFormat, "STARTING DOWNLOADING CURRENT VIDEO", current_video_title);
+            current_video_download_name = current_video_number + numeration_separator + current_video_title + ".mp4";
+            download_stream(current_stream_url, "C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop\\" + current_video_download_name, current_video_title);
+            System.out.println("THE VIDEO FOR THIS COURSE WAS SUCCESFULLY DOWNLOADED");
+
+            go_to_next_video_and_wait(driver);
+
+        } while (current_video_number < total_videos_number);
+
+        System.out.println("ALL THE VIDEOS FOR THIS COURSE WAS SUCCESSFULLY DOWNLOADED");
+        System.out.println(current_video_number + "/" + total_videos_number +" WERE DOWNLOADED FROM THE COURSE ->> " + course_name);
+        System.out.println("ALL THE FILES ARE IN THE FOLLOWING PATH" + course_directory);
 
 //        driver.quit();
     }
