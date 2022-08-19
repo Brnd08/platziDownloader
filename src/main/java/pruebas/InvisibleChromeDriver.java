@@ -8,6 +8,7 @@ import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import javax.swing.*;
 import java.io.File;
@@ -41,29 +42,35 @@ public class InvisibleChromeDriver {
     public static void download_stream(String input_url, String output_file_path) {
         try {
             FFmpeg ffmpeg = new FFmpeg("src/main/java/pruebas/ffmpeg.exe");
-            FFprobe ffprobe = new FFprobe("src/main/java/pruebas/ffprobe.exe");
+            FFprobe fFprobe= new FFprobe("src/main/java/pruebas/ffprobe.exe");
 
             FFmpegBuilder builder = new FFmpegBuilder()
 
                     .setInput(input_url)     // Filename, or a FFmpegProbeResult
                     .overrideOutputFiles(true) // Override the output if it exists
 
-                    .addOutput(output_file_path)   // Filename for the destination
+
+                    .addOutput("\"" +output_file_path.replaceAll(":","") + ".mp4\"" )   // Filename for the destination
+
+                    .setFormat("mp4")
+
 
                     .setAudioChannels(1)         // Mono audio
                     .setAudioCodec("copy")        // using the aac codec
 
                     .setVideoCodec("copy")     // Video using x264
                     .setAudioBitStreamFilter("aac_adtstoasc")
+
+
                     .done();
 
-            FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+            FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, fFprobe);
 
 // Run a one-pass encode
             executor.createJob(builder).run();
 
         } catch (Exception e) {
-            System.out.println("\nCOULDN'T DOWNLOAD THE VIDEO FOR THIS COURSE\n");
+            System.out.println("\nCOULDN'T DOWNLOAD THE VIDEO FOR THIS COURSE " );
             throw new RuntimeException(e);
         }
     }
@@ -167,49 +174,81 @@ public class InvisibleChromeDriver {
 
     public static boolean page_has_loaded(WebDriver driver, String old_text_value) {
 
-        String current_text_value = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type--video > " +
-                "div.MaterialView-video > div.MaterialView-content > div > div.Header.material-video > div.Header-course > " +
-                "div.Header-course-actions > button.Header-course-actions-next > span")).getText();
+        String current_text_value = find_current_video_title(driver);
 
         return !old_text_value.equals(current_text_value) && !old_text_value.isBlank() && !old_text_value.isEmpty();
     }
 
     public static void go_to_next_video_and_wait(WebDriver driver) {
         try {
-            WebElement next_video_button = driver.findElement(By.className("#material-view > " +
-                    "div.MaterialView.MaterialView-type--video > div.MaterialView-video > div.MaterialView-content > div > " +
-                    "div.Header.material-video > div.Header-course > div.Header-course-actions > " +
-                    "button.Header-course-actions-next"));
-            String old_text_value = next_video_button.findElement(By.tagName("span")).getText();
+            WebElement next_video_button = driver.findElement(By.className("Header-course-actions-next"));
             next_video_button.click();
+            String old_text_value = find_current_video_title(driver);
             while (!page_has_loaded(driver, old_text_value))
-                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
+                Thread.sleep(3000);
         } catch (Exception e) {
             System.out.println("\n FAIL TO WAIT UNTIL LOAD PAGE\n");
             throw new RuntimeException(e);
         }
     }
 
+    public static void write_credentials(WebDriver driver, String email, String pass){
+        try {
+            WebElement email_input = driver.findElement(By.name("email"));
+            WebElement pass_input = driver.findElement(By.name("password"));
+
+            WebElement submit_button = driver.findElement(By.cssSelector(".btn-Green.btn--md"));
+
+            email_input.sendKeys(email);
+            Thread.sleep(3000);
+
+            pass_input.sendKeys(pass);
+            Thread.sleep(3000);
+
+
+            submit_button.click();
+            Thread.sleep(18000);
+        }catch(Exception e){
+            System.out.println("COULDN'T LOG IN AUTOMATICALLY");
+            throw new RuntimeException(e);
+
+        }
+    }
+
     public static void main(String[] args) {
 
         WebDriver driver = new ChromeDriver(create_invisible_chrome_options());
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-        final String printFormat = "%-40s --> %-30s \n";
+        final String printFormat = "%-50s --> %-30s \n";
         final String numeration_separator = ".- ";
+
+        final String first_video_url = "https://platzi.com/clases/3208-programacion-basica/51981-estructura-arbol-html";
+        final String platzi_login_url = "https://platzi.com/login";
+        JOptionPane.showMessageDialog(null , "Solo necesitas iniciar sesión si no, el programa no tendra" +
+                " acceso a los videos, TIENES 10 SEGUNDOS PARA RESOLVER EL CAPCHA SI ES QUE TE SALTA", "Solo recuerda", JOptionPane.INFORMATION_MESSAGE);
+
+        driver.get(platzi_login_url);
+
+        final String mail = "binig23431@kaseig.com";
+        final String password = "contra12";
+
+        System.out.format(printFormat, "Credentials", "email: " + mail + " password: " + password);
+
+        write_credentials(driver, mail, password);
+
+
+        driver.get(first_video_url);
 
         final String course_name = get_current_course(driver);
         System.out.format(printFormat, "The current video COURSE is", course_name);
 
         final File parent_directory = new File ("C:\\Users\\brdn\\OneDrive - Instituto Politecnico Nacional\\Desktop\\Platzi-Downloader");
+
         final File course_directory = new File (parent_directory + File.separator + course_name);
         final File lesson_resources_directory = new File (course_directory + File.separator + "archivos de las clases");
 
-        final String first_video_url = "https://platzi.com/clases/3208-programacion-basica/52069-que-es-platzi/";
-        driver.get(first_video_url);
 
-
-        JOptionPane.showMessageDialog(null , "Cierra esta mensaje una vez hayás iniciado sesión en " +
-                "la plataforma", "Espera Un poco ...", 1);
 
         final int total_videos_number = find_number_of_videos(driver);
         System.out.format(printFormat, "The total NUMBER OF VIDEOS in this course: ", total_videos_number);
@@ -221,14 +260,13 @@ public class InvisibleChromeDriver {
         String current_video_download_name = "Default video download name";
 
         do {
+            current_video_number = find_current_video_number(driver);
+            System.out.format(printFormat, "The current video NUMBER is", current_video_number);
 
             current_video_title = find_current_video_title(driver);
             System.out.format(printFormat, "The current video TITLE is", current_video_title);
 
-            current_video_number = find_current_video_number(driver);
-            System.out.format(printFormat, "The current video NUMBER is", current_video_number);
-
-            System.out.println("SEARCHING FOR FILES IN THIS VIDEO ...");
+            System.out.println("SEARCHING FOR FILES IN THIS VIDEO -------------------------------------------------------------");
             try {
                 current_files_download_name = current_video_number + numeration_separator + current_video_title
                         + " - " + driver.findElement(By.className("FilesAndLinks-title")).getText();
@@ -241,9 +279,9 @@ public class InvisibleChromeDriver {
             System.out.format(printFormat, "Streaming link", current_stream_url);
 
             System.out.format(printFormat, "STARTING DOWNLOADING CURRENT VIDEO", current_video_title);
-            current_video_download_name = current_video_number + numeration_separator + current_video_title + ".mp4";
+            current_video_download_name = current_video_number + numeration_separator + current_video_title;
 
-            if(course_directory.exists())
+            if(!course_directory.exists())
                 course_directory.mkdirs();
 
             download_stream(current_stream_url, course_directory + File.separator + current_video_download_name);
