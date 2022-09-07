@@ -18,7 +18,7 @@ public class FfmpegExtractor {
         final URI uri = getJarURI();
         final URI exe = getFile(uri, "ffmpeg.exe");
         System.out.printf(printFormat, "TEMPORARY FFMPEG FILE", exe);
-        return exe.toString();
+        return exe.getPath().replaceFirst("/", "");
     }
 
     private static URI getJarURI() throws URISyntaxException {
