@@ -9,5 +9,8 @@
         <module name="platzi_downloader" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="platzi_downloader" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
