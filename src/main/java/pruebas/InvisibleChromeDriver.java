@@ -1,35 +1,30 @@
 package pruebas;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
-import net.bramp.ffmpeg.FFprobe;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import ru.yandex.qatools.ashot.AShot;
+import ru.yandex.qatools.ashot.Screenshot;
 
-import javax.swing.*;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.Normalizer;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 import static pruebas.DownloaderHelper.download_bytes;
+import static pruebas.FfmpegExtractor.get_temporary_ffmpeg_path;
 
 public class InvisibleChromeDriver {
 
-    static {
-        WebDriverManager.chromedriver().setup();
-    }
+    public static final String printFormat = " %-60s || %-30s \n";
+    public static final String imagesFormat = "png";
 
     public static String get_current_stream_url(WebDriver driver) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -46,8 +41,7 @@ public class InvisibleChromeDriver {
     public static void download_stream(String input_url, String output_file_path) {
         String output = "\"" + output_file_path + "\"";
         try {
-            FFmpeg ffmpeg = new FFmpeg("src/main/java/pruebas/ffmpeg.exe");
-
+            FFmpeg ffmpeg = new FFmpeg(get_temporary_ffmpeg_path());
             FFmpegBuilder builder = new FFmpegBuilder()
 
                     .setInput(input_url)     // Filename, or a FFmpegProbeResult
@@ -75,7 +69,6 @@ public class InvisibleChromeDriver {
 
     public static ChromeOptions create_invisible_chrome_options() {
         ChromeOptions options = new ChromeOptions();
-
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--disable-blink-features=AutomationControlled");
@@ -187,46 +180,68 @@ public class InvisibleChromeDriver {
         return lesson_number;
     }
 
-    public static void download_current_video_files(WebDriver driver, String file_name, String parent_directory, String format) {
-        WebElement download_all_files_button;
-        String link;
+    public static void download_files(ArrayList<String> links, String parent_directory, String file_name) {
         try {
-            download_all_files_button = driver.findElement(By.className("FilesTree-download"));
-            link = download_all_files_button.getAttribute("href");
+            for (String link : links) {
+                URL download_url = new URL(link);
+                String extension = new StringBuilder(link).substring(link.lastIndexOf("."));
+                download_bytes(parent_directory, file_name + extension, download_url, printFormat);
+            }
         } catch (Exception e) {
-            System.out.format(format, "FILES LESSON FILE", "COULDN'T FIND FILES FOR THIS VIDEO \t");
-            return;
+            System.out.format(printFormat, "SINGLE FILES LESSON FILE", "COULDN'T FIND ANY DOWNLOADABLE FILES FOR THIS LESSON \t");
         }
+    }
+
+    public static void download_files(String link, String parent_directory, String file_name) {
         try {
             URL download_url = new URL(link);
             String extension = new StringBuilder(link).substring(link.lastIndexOf("."));
-            download_bytes(parent_directory, file_name + extension, download_url, format);
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            download_bytes(parent_directory, file_name + extension, download_url, printFormat);
+        } catch (Exception e) {
+            System.out.format(printFormat, "PACKED FILES LESSON FILE", "COULDN'T FIND ANY .ZIP DOWNLOADABLE FILE FOR THIS LESSON \t");
         }
+    }
+
+    public static void download_current_video_files(WebDriver driver, String file_name, String parent_directory) {
+        WebElement download_all_files_button = null;
+        List<WebElement> downloadable_files;
+        ArrayList<String> links = new ArrayList<>();
+        String link = "";
+
+        try {
+            download_all_files_button = driver.findElement(By.className("FilesTree-download"));
+            link = download_all_files_button.getAttribute("href");
+        } catch (NoSuchElementException | NullPointerException exception) {
+            System.out.println("*couldn't find \"download all files\" button");
+        }
+
+        try {
+            downloadable_files = driver.findElements(By.cssSelector(".FilesAndLinks-item"));
+            for (WebElement element : downloadable_files) {
+                links.add(element.getAttribute("href"));
+            }
+        } catch (NoSuchElementException | NullPointerException exception) {
+            System.out.println("*couldn't find any downloadable file");
+        }
+
+        if (!link.isEmpty())
+            download_files(link, parent_directory, file_name);
+        else if (links.size() >= 1)
+            download_files(links, parent_directory, file_name);
 
     }
 
-    public static void download_current_lesson(WebDriver driver, String file_name, String parent_directory, String format, String extension) throws IOException {
-        File file = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-        File to_save = new File(parent_directory + File.separator + file_name + extension);
 
-        System.out.printf(format, "SELENIUM FILE ", file);
-        System.out.printf(format, "PAGE SCREENSHOT ", to_save);
+    public static void download_page_screenshot(WebDriver driver, String file_name, String course_directory, String extension) throws IOException {
+        WebElement lecture = driver.findElement(By.cssSelector(".MaterialView-content-wrapper"));
+        Screenshot lecture_image = new AShot().takeScreenshot(driver, lecture);
 
-        FileInputStream in = new FileInputStream(file);
-        FileOutputStream out = new FileOutputStream(to_save);
-        try {
-            int n;
-            while ((n = in.read()) != -1)
-                out.write(n);
-        } finally {
-            if (in != null)
-                in.close();
-            if (out != null)
-                out.close();
-        }
+        BufferedImage image = lecture_image.getImage();
 
+        File image_to_save = new File(course_directory + File.separator + file_name);
+        ImageIO.write(image, imagesFormat, image_to_save);
+
+        System.out.printf(printFormat, "PAGE SCREENSHOT ", image_to_save);
     }
 
     public static boolean page_has_loaded(WebDriver driver, String old_text_value) {
