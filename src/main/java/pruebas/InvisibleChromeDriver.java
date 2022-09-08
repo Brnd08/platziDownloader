@@ -19,11 +19,9 @@ import static pruebas.DownloaderHelper.*;
 
 
 public class InvisibleChromeDriver {
-
     public static final String printFormat = " %-60s || %-30s \n";
     public static final String imagesFormat = "png";
     public static final String html_format = "<!DOCTYPE html>" + "<head><title>$title</title></head>" + "<body>$body</body>" + "</html>";
-
 
     public static String get_current_stream_url(WebDriver driver) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -83,9 +81,7 @@ public class InvisibleChromeDriver {
     public static String find_current_video_title(WebDriver driver) {
         String lineContent = null;
         try {
-            lineContent = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
-                    "--video > div.MaterialView-video > div.MaterialView-content > div > div.Header.material-video > " +
-                    "div.Header-class > div > h1")).getText();
+            lineContent = driver.findElement(By.cssSelector("div.Header-class > div > h1")).getText();
         } catch (Exception e) {
             System.out.println("\n FAIL TO GET ELEMENT BY CSS-SELECTOR");
         }
@@ -95,9 +91,7 @@ public class InvisibleChromeDriver {
     public static String find_current_lecture_title(WebDriver driver) {
         String lineContent = null;
         try {
-            lineContent = driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView" +
-                    "-type--lecture > div.MaterialView-video > div > div > div.Header.material-lecture > " +
-                    "div.Header-class > div.Header-class-title > h1")).getText();
+            lineContent = driver.findElement(By.cssSelector(".Header-class-title > h1")).getText();
         } catch (Exception e) {
             System.out.println("\n FAIL TO GET ELEMENT BY CSS-SELECTOR");
         }
@@ -117,11 +111,7 @@ public class InvisibleChromeDriver {
 
     public static String[] get_numeric_video_info(WebDriver driver) {
         try {
-
-            String video_info_text =
-                    driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-" +
-                            "type--video > div.MaterialView-video > div.MaterialView-content > div > div." +
-                            "Header.material-video > div.Header-class > div > span")).getText();
+            String video_info_text = driver.findElement(By.cssSelector("div.Header-class > div > span")).getText();
             return video_info_text.split("/");
         } catch (Exception e) {
             System.out.println("\n FAIL TO GET THE NUMERIC VIDEO INFO\n");
@@ -132,10 +122,7 @@ public class InvisibleChromeDriver {
     public static String[] get_numeric_lesson_info(WebDriver driver) {
         try {
 
-            String video_info_text =
-                    driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
-                            "--lecture > div.MaterialView-video > div > div > div.Header.material-lecture >" +
-                            " div.Header-class > div.Header-class-title > span")).getText();
+            String video_info_text = driver.findElement(By.cssSelector("div.Header-class > div > span")).getText();
             return video_info_text.split("/");
         } catch (Exception e) {
             System.out.println("\n FAIL TO GET THE NUMERIC VIDEO INFO\n");
@@ -145,12 +132,9 @@ public class InvisibleChromeDriver {
 
     public static String get_current_course(WebDriver driver) {
         try {
-            String video_info_text =
-                    driver.findElement(By.cssSelector("#material-view > div.MaterialView.MaterialView-type" +
-                            "--video > div.MaterialView-video > div.MaterialView-content > div > div.Header" +
-                            ".material-video > div.Header-course > div.Header-course-info > div > a > h2")).getText();
+            String video_info_text = driver.findElement(By.cssSelector("div.Header-course > div.Header-course-info > div > a > h2")).getText();
             return video_info_text;
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             System.out.println("\n FAIL TO GET THE CURRENT COURSE\n");
             throw new RuntimeException(e);
         }
@@ -194,6 +178,9 @@ public class InvisibleChromeDriver {
         try {
             URL download_url = new URL(link);
             String extension = new StringBuilder(link).substring(link.lastIndexOf("."));
+            if (extension.equals(".com") || extension.equals(".io"))//abort if it's a web page or link
+                return;
+
             download_bytes(parent_directory, file_name + extension, download_url, printFormat);
         } catch (Exception e) {
             System.out.format(printFormat, "PACKED FILES LESSON FILE", "COULDN'T FIND ANY .ZIP DOWNLOADABLE FILE FOR THIS LESSON \t");
@@ -210,7 +197,7 @@ public class InvisibleChromeDriver {
             download_all_files_button = driver.findElement(By.className("FilesTree-download"));
             link = download_all_files_button.getAttribute("href");
         } catch (NoSuchElementException | NullPointerException exception) {
-            System.out.println("*couldn't find \"download all files\" button");
+            System.out.println("\t*couldn't find \"download all files\" button");
         }
 
         try {
@@ -219,13 +206,11 @@ public class InvisibleChromeDriver {
                 links.add(element.getAttribute("href"));
             }
         } catch (NoSuchElementException | NullPointerException exception) {
-            System.out.println("*couldn't find any downloadable file");
+            System.out.println("\t*couldn't find any downloadable file");
         }
 
-        if (!link.isEmpty())
-            download_files(link, parent_directory, file_name);
-        else if (links.size() >= 1)
-            download_files(links, parent_directory, file_name);
+        if (!link.isEmpty()) download_files(link, parent_directory, file_name);
+        else if (links.size() >= 1) download_files(links, parent_directory, file_name);
 
     }
 
@@ -267,23 +252,21 @@ public class InvisibleChromeDriver {
 
     }
 
-
     public static boolean page_has_loaded(WebDriver driver, String old_text_value) {
         String current_text_value = find_current_video_title(driver);
-        return !old_text_value.equals(current_text_value) && !old_text_value.isBlank();
+        return !old_text_value.equals(current_text_value) && !old_text_value.isEmpty();
     }
 
     public static boolean lecture_has_loaded(WebDriver driver, String old_text_value) {
         String current_text_value = find_current_lecture_title(driver);
-        return !old_text_value.equals(current_text_value) && !old_text_value.isBlank();
+        return !old_text_value.equals(current_text_value) && !old_text_value.isEmpty();
     }
 
     public static void go_to_next_video_and_wait(WebDriver driver, String old_text_value) {
         try {
             WebElement next_video_button = driver.findElement(By.className("Header-course-actions-next"));
             next_video_button.click();
-            while (!page_has_loaded(driver, old_text_value))
-                Thread.sleep(3000);
+            while (!page_has_loaded(driver, old_text_value)) Thread.sleep(3000);
         } catch (Exception e) {
             System.out.println("\n FAIL TO WAIT UNTIL LOAD PAGE\n");
             throw new RuntimeException(e);
@@ -294,11 +277,15 @@ public class InvisibleChromeDriver {
         try {
             WebElement next_video_button = driver.findElement(By.className("Header-course-actions-next"));
             next_video_button.click();
-            while (!lecture_has_loaded(driver, old_text_value))
-                Thread.sleep(3000);
-        } catch (Exception e) {
-            System.out.println("\n FAIL TO WAIT UNTIL LOAD PAGE\n");
+            while (!lecture_has_loaded(driver, old_text_value)) Thread.sleep(3000);
+            Thread.sleep(3000);
+        } catch (NoSuchElementException e) {
+            System.out.println("\n COULDN'T GET "+ ".Header-course-actions-next button\n");
             throw new RuntimeException(e);
+        }catch(InterruptedException e2){
+            System.out.println("\n THE THREAD SUDDENLY STOPS \n");
+            throw new RuntimeException(e2);
+
         }
     }
 
@@ -310,18 +297,17 @@ public class InvisibleChromeDriver {
             WebElement submit_button = driver.findElement(By.cssSelector(".btn-Green.btn--md"));
 
             email_input.sendKeys(email);
-            Thread.sleep(3000);
+            Thread.sleep(500);
 
             pass_input.sendKeys(pass);
-            Thread.sleep(3000);
-
+            Thread.sleep(500);
 
             submit_button.click();
-            Thread.sleep(20000);
+
+            Thread.sleep(28000);
         } catch (Exception e) {
             System.out.println("COULDN'T LOG IN AUTOMATICALLY");
             throw new RuntimeException(e);
-
         }
     }
 
