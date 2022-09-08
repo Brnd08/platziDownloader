@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 import static pruebas.DownloaderHelper.download_bytes;
-import static pruebas.FfmpegExtractor.get_temporary_ffmpeg_path;
 
 public class InvisibleChromeDriver {
 
@@ -38,10 +37,10 @@ public class InvisibleChromeDriver {
         throw new RuntimeException("COULDN'T GET THE STREAM URL");
     }
 
-    public static void download_stream(String input_url, String output_file_path) {
+    public static void download_stream(String input_url, String output_file_path, String ffmpeg_path) {
         String output = "\"" + output_file_path + "\"";
         try {
-            FFmpeg ffmpeg = new FFmpeg(get_temporary_ffmpeg_path());
+            FFmpeg ffmpeg = new FFmpeg(ffmpeg_path);
             FFmpegBuilder builder = new FFmpegBuilder()
 
                     .setInput(input_url)     // Filename, or a FFmpegProbeResult
@@ -53,8 +52,7 @@ public class InvisibleChromeDriver {
                     .setAudioCodec("copy")        // using the aac codec
 
                     .setVideoCodec("copy")     // Video using x264
-                    .setAudioBitStreamFilter("aac_adtstoasc")
-                    .done();
+                    .setAudioBitStreamFilter("aac_adtstoasc").done();
 
             FFmpegExecutor executor = new FFmpegExecutor(ffmpeg);
 

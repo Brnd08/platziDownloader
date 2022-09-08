@@ -50,6 +50,14 @@ public class Main {
         final File parent_directory = new File(root);
         System.out.format(printFormat, "ROOT DIRECTORY", parent_directory);
 
+        final String ffmpeg_path;
+        System.out.printf(input_format, "Ruta de FFmpeg.exe");
+        String token1 = user_input.nextLine();
+        ffmpeg_path = token1.replaceAll("\"", "");
+
+        final File ffmpeg = new File (ffmpeg_path);
+        System.out.format(printFormat, "FFMPEG FILE", ffmpeg);
+
         JOptionPane.showMessageDialog(null, "Para poder comenzar solo necesitas " +
                 "iniciar sesión una vez para que el programa obtenga acceso a los videos, \nOJO: SI TE " +
                 "SALTA UN CAPCHA  TIENES 25 SEGUNDOS PARA RESOLVERLO\nSi ocurre algún error favor de reportar a @Brdn08 " +
@@ -145,7 +153,7 @@ public class Main {
             current_video_download_name = current_video_number + numeration_separator + current_video_title + ".mp4";
             System.out.format(printFormat, "DOWNLOADING VIDEO FILE PLEASE WAIT ...", current_video_download_name);
 
-            download_stream(current_stream_url, course_directory + File.separator + current_video_download_name);
+            download_stream(current_stream_url, course_directory + File.separator + current_video_download_name, ffmpeg_path);
             System.out.println(current_video_download_name + " WAS SUCCESSFULLY DOWNLOADED \n");
 
             go_to_next_video_and_wait(driver, current_video_title);
