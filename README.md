@@ -8,25 +8,26 @@ Using the [Selenium automatization tool](https://www.selenium.dev/) and [ffmpeg]
 
 ## Author
 
-- [@Brnd08](https://github.com/Brnd08)
+- [@Brnd08](https://github.com/Brnd08) github
+- [@Brnd08](https://t.me/brdn08) telegram
 
 
 ## Features
 
 - Automaticaly search for streaming files like .m3u8, .ism, .hls, etc.
-- ALL-IN-ONE. Doesn't requires other programs to be installed
+- Just need the ffmpeg.exe 
 - Web-driver parched to prevent Anti_bot_detection
 - Download lessons files in zip format
 - Classify and enumerate the videos and files. Dont worry to spent hours doing by yourserlf (currently in working)
-- Also download the documentation pages (present in some courses). ALSO IN DEVELOPMENT
+- Also download the documentation pages (present in some courses).
 
 
 
 ## More About
 
 This project is still in development, in order to have more simply an usefull fuctionality.
-
-It is planned to develop a visual interface with javafx.
+If you have any request or suggestionm it will be well received.
+It is planned to develop a visual interface with javafx in the future.
 
 [Awesome README](https://github.com/matiassingers/awesome-readme)
 
