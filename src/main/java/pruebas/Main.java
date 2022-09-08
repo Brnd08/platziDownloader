@@ -3,6 +3,7 @@ package pruebas;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
 import javax.swing.*;
@@ -15,8 +16,14 @@ import static pruebas.InvisibleChromeDriver.*;
 
 
 public class Main {
+    private static void printSeparator (){
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println("_________________________________________________________________________________________________\n");
+    }
 
     public static void main(String[] args) {
+
+        printSeparator();
         Scanner user_input = new Scanner(System.in);
         final String input_format = "\n* %-55s ->";
 
@@ -30,6 +37,7 @@ public class Main {
         final String first_video_url = user_input.next();
         System.out.printf(printFormat, "INITIAL LESSON URL", first_video_url);
 
+
         System.out.printf(input_format, "Correo cuenta platzi");
         final String mail = user_input.next();
         System.out.format(printFormat, "EMAIL", mail);
@@ -38,15 +46,12 @@ public class Main {
         final String password = user_input.next();
         System.out.format(printFormat, "PASSWORD", password);
 
-        System.out.printf(input_format, "Ditectorio raiz para guardar el curso");
-
-        String root = "";
+        final String root;
+        System.out.printf(input_format, "Directorio raiz para guardar el curso");
         user_input.useDelimiter("\"");
         user_input.nextLine();
         String token = user_input.nextLine();
         root = token.replaceAll("\"", "");
-        System.out.println(root);
-
         final File parent_directory = new File(root);
         System.out.format(printFormat, "ROOT DIRECTORY", parent_directory);
 
@@ -59,12 +64,13 @@ public class Main {
         System.out.format(printFormat, "FFMPEG FILE", ffmpeg);
 
         JOptionPane.showMessageDialog(null, "Para poder comenzar solo necesitas " +
-                "iniciar sesión una vez para que el programa obtenga acceso a los videos, \nOJO: SI TE " +
-                "SALTA UN CAPCHA  TIENES 25 SEGUNDOS PARA RESOLVERLO\nSi ocurre algún error favor de reportar a @Brdn08 " +
-                "\n** Cierra esta ventana para comenzar.", "ESPERA UN POCO...",
+                        "iniciar sesión una vez para que el programa obtenga acceso a los videos, \nOJO: SI TE " +
+                        "SALTA UN CAPCHA  TIENES 25 SEGUNDOS PARA RESOLVERLO\nSi ocurre algún error favor de reportar a @Brdn08 " +
+                        "\n** Cierra esta ventana para comenzar.", "ESPERA UN POCO...",
                 JOptionPane.WARNING_MESSAGE);
 
         WebDriverManager.chromedriver().setup();
+
         WebDriver driver = WebDriverManager.chromedriver().capabilities((Capabilities) create_invisible_chrome_options()).create();
 
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
@@ -75,13 +81,15 @@ public class Main {
 
         driver.get(first_video_url);
 
+        printSeparator();
         final String course_name = get_current_course(driver);
         System.out.format(printFormat, "COURSE NAME", course_name);
 
 
         final File course_directory = new File(parent_directory + File.separator + course_name);
         final File lesson_resources_directory = new File(course_directory + File.separator + "archivos de las clases");
-
+        course_directory.mkdirs();
+        lesson_resources_directory.mkdirs();
 
         final int total_videos_number = find_number_of_videos(driver);
         System.out.format(printFormat, "NUMBER OF VIDEOS FOR THIS COURSE: ", total_videos_number);
@@ -91,15 +99,16 @@ public class Main {
         String current_files_download_name = "Default files download name";
         String current_stream_url = "Default stream url";
         String current_video_download_name = "Default video download name";
-        System.out.println("-------------------------------------------------------------------------------------------------");
 
         do {
+            printSeparator();
             String Lesson_kind = "";
-            System.out.println("_________________________________________________________________________________________________\n");
+
             try {
                 if (driver.findElement(By.cssSelector("div.Header-lecture")) != null) {
 
                     Lesson_kind = "LECTURA";
+                    System.out.format(printFormat, "LESSON KIND", Lesson_kind);
 
                     int number = find_current_lecture_number(driver);
                     System.out.format(printFormat, "LECTURE NUMBER", number);
@@ -110,21 +119,31 @@ public class Main {
 
                     try {
                         String current_lecture_download_name = number + numeration_separator + name;
-
                         save_lecture_html_content(driver, current_lecture_download_name,
                                 course_directory.toString(), ".html", ".MaterialLecture");
                     } catch (Exception e) {
-                        System.out.println("ATTENTION: COULDN'T TAKE SCREENSHOT FOR THIS LESSON\t");
+                        System.out.println("ATTENTION: SAVE LECTURE HTML\t");
+                        throw new RuntimeException(e);
                     }
 
+                    printSeparator();
                     go_to_next_lesson_and_wait(driver, name);
+                }
+            } catch (NoSuchElementException e) {
+
+            } catch (Exception e1){
+                System.out.println("REPORTA ESTE PROBLEMA");
+                System.out.println(e1.getMessage());
+                continue;
+            } finally{
+                if(Lesson_kind.equals("LECTURA")) {
+                    Lesson_kind = "DESPUES DE LECTURA";
                     continue;
                 }
-            } catch (Exception e) {
-                Lesson_kind = "VIDEO";
             }
 
-            System.out.format(printFormat, "LESSON KIND", "VIDEO");
+            Lesson_kind = "VIDEO";
+            System.out.format(printFormat, "LESSON KIND", Lesson_kind);
 
             current_video_number = find_current_video_number(driver);
             System.out.format(printFormat, "LESSON NUMBER", current_video_number);
@@ -163,6 +182,8 @@ public class Main {
             download_stream(current_stream_url, course_directory + File.separator + current_video_download_name, ffmpeg_path);
             System.out.println(current_video_download_name + " WAS SUCCESSFULLY DOWNLOADED \n");
 
+            Lesson_kind = "DESPUES VIDEO";
+
             go_to_next_video_and_wait(driver, current_video_title);
 
         } while (current_video_number < total_videos_number);
@@ -173,4 +194,3 @@ public class Main {
         //binig23431@kaseig.com contra12
     }
 }
-
