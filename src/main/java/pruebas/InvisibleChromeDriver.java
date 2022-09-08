@@ -6,11 +6,6 @@ import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeOptions;
-import ru.yandex.qatools.ashot.AShot;
-import ru.yandex.qatools.ashot.Screenshot;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -19,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import static pruebas.DownloaderHelper.*;
 
 
@@ -26,6 +22,8 @@ public class InvisibleChromeDriver {
 
     public static final String printFormat = " %-60s || %-30s \n";
     public static final String imagesFormat = "png";
+    public static final String html_format = "<!DOCTYPE html>" + "<head><title>$title</title></head>" + "<body>$body</body>" + "</html>";
+
 
     public static String get_current_stream_url(WebDriver driver) {
         JavascriptExecutor js = (JavascriptExecutor) driver;
