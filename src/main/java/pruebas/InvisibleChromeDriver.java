@@ -3,6 +3,7 @@ package pruebas;
 import net.bramp.ffmpeg.FFmpeg;
 import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeOptions;
 import ru.yandex.qatools.ashot.AShot;
@@ -13,12 +14,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import static pruebas.DownloaderHelper.*;
 
-import static pruebas.DownloaderHelper.download_bytes;
 
 public class InvisibleChromeDriver {
 
@@ -229,18 +231,44 @@ public class InvisibleChromeDriver {
 
     }
 
+    public static void save_lecture_html_content(WebDriver driver, String file_name, String course_directory, String extension, String css_selector) {
+        try {
 
-    public static void download_page_screenshot(WebDriver driver, String file_name, String course_directory, String extension) throws IOException {
-        WebElement lecture = driver.findElement(By.cssSelector(".MaterialView-content-wrapper"));
-        Screenshot lecture_image = new AShot().takeScreenshot(driver, lecture);
+            String title = file_name;
+/*
+            WORKS BUT CHROMEDRIVER CRASHES
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            String body = (String) js.executeScript("return document.querySelector('.MaterialLecture').innerHTML;");
 
-        BufferedImage image = lecture_image.getImage();
+            DOESN'T WORK RETURN NULL
+            WebElement lecture_element = driver.findElement(By.cssSelector(".MaterialLecture"));
+            String body = lecture_element.getAttribute("inner.HTML");
 
-        File image_to_save = new File(course_directory + File.separator + file_name);
-        ImageIO.write(image, imagesFormat, image_to_save);
+            try this:
+ */
+            WebElement element = driver.findElement(By.cssSelector(css_selector));
+            String body = (String)((JavascriptExecutor)driver).executeScript("return arguments[0].innerHTML;", element);
 
-        System.out.printf(printFormat, "PAGE SCREENSHOT ", image_to_save);
+            if(body.isEmpty()) //abort if body content is empty
+                return;
+
+            String lecture_html = html_format.replace("$title", title);
+            lecture_html = lecture_html.replace("$body", body);
+
+            File newHtmlFile = new File(course_directory + File.separator + file_name + extension);
+            FileUtils.writeStringToFile(newHtmlFile, lecture_html, (Charset) null);
+
+            System.out.printf(printFormat, "DOWNLOADED FILE", newHtmlFile);
+        } catch (IOException e) {
+            System.out.println("couldn't write String to file");
+            throw new RuntimeException(e);
+        } catch (NullPointerException e1) {
+            System.out.println("possibly JS executor return null");
+            throw new RuntimeException(e1);
+        }
+
     }
+
 
     public static boolean page_has_loaded(WebDriver driver, String old_text_value) {
         String current_text_value = find_current_video_title(driver);

@@ -4,7 +4,6 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 
 import javax.swing.*;
 import java.io.File;
@@ -13,6 +12,7 @@ import java.time.Duration;
 import java.util.Scanner;
 
 import static pruebas.InvisibleChromeDriver.*;
+
 
 public class Main {
 
@@ -110,8 +110,9 @@ public class Main {
 
                     try {
                         String current_lecture_download_name = number + numeration_separator + name;
-                        download_page_screenshot(driver, current_lecture_download_name,
-                                course_directory.toString(), ".png");
+
+                        save_lecture_html_content(driver, current_lecture_download_name,
+                                course_directory.toString(), ".html", ".MaterialLecture");
                     } catch (Exception e) {
                         System.out.println("ATTENTION: COULDN'T TAKE SCREENSHOT FOR THIS LESSON\t");
                     }
@@ -138,6 +139,12 @@ public class Main {
                 current_files_download_name = current_video_number + numeration_separator + current_video_title
                         + " - " + driver.findElement(By.className("FilesAndLinks-title")).getText();
                 download_current_video_files(driver, current_files_download_name, lesson_resources_directory.toString());
+                try{//Download lesson description as html if available
+                    save_lecture_html_content(driver, current_files_download_name + " - descripcion",
+                            lesson_resources_directory.toString(), ".html", "div.Resources-description");
+                }catch (RuntimeException e ){
+                    //Do-nothing
+                }
             } catch (Exception e) {
                 System.out.println("ATTENTION: COULDN'T FIND/DOWNLOAD FILES FOR THIS LESSON\t");
             }
