@@ -66,3 +66,8 @@ It is planned to develop a visual interface with javafx in the future.
 
 [Awesome README](https://github.com/matiassingers/awesome-readme)
 
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/Brnd08/platziDownloader.svg)](https://starchart.cc/Brnd08/platziDownloader)
+
